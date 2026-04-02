@@ -6,7 +6,6 @@ export const processDeposit = async (req: AuthRequest, res: Response): Promise<v
   try {
     const { amount, source } = req.body;
     
-    // Mocking Stripe/PayPal validation delay
     const reference = `MOCK_${source.toUpperCase()}_${Date.now()}`;
     
     const transaction = await Transaction.create({
@@ -33,6 +32,30 @@ export const processWithdrawal = async (req: AuthRequest, res: Response): Promis
       amount,
       status: 'pending',
       reference: `MOCK_WD_${Date.now()}`
+    });
+
+    res.status(200).json(transaction);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// NEW: Transfer functionality between users
+export const processTransfer = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { amount, destinationUserId } = req.body;
+
+    if (!destinationUserId || !amount) {
+      res.status(400).json({ message: 'Destination user and amount are required' });
+      return;
+    }
+
+    const transaction = await Transaction.create({
+      user: req.user._id,
+      type: 'transfer',
+      amount,
+      status: 'completed', // Using completed for mock purposes
+      reference: `MOCK_TX_${Date.now()}`
     });
 
     res.status(200).json(transaction);
